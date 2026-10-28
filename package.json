@@ -1,0 +1,28 @@
+{
+  "name": "news-india",
+  "private": true,
+  "version": "1.0.0",
+  "description": "News India bilingual news portal — Phase 1 with JSON demo data",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @news-india/shared",
+    "dev": "npm run build:shared && concurrently -n api,web -c blue,green \"npm run dev -w @news-india/api\" \"npm run dev -w @news-india/web\"",
+    "build": "npm run build:shared && npm run build -w @news-india/api && npm run build -w @news-india/web",
+    "test": "npm run build:shared && npm run test -w @news-india/api",
+    "generate-seed": "tsx scripts/generate-seed.ts",
+    "reset-demo": "tsx scripts/reset-demo-data.ts",
+    "validate-demo": "tsx scripts/validate-demo-data.ts",
+    "start": "npm run build:shared && npm run start -w @news-india/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

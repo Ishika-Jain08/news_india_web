@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #f3efe6;
+  color: #1c1915;
+  font-family: "Source Sans 3", "Noto Sans Devanagari", sans-serif;
+}
+
+:lang(hi) h1,
+:lang(hi) h2,
+:lang(hi) h3,
+:lang(hi) .font-serif {
+  font-family: "Noto Serif Devanagari", "Source Serif 4", serif;
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker 36s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+}
+
+@media print {
+  header, footer, nav, .no-print { display: none !important; }
+  body { background: white; }
+  .article-body { font-size: 12pt; line-height: 1.5; }
+}
