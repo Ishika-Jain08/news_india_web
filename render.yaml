@@ -1,0 +1,32 @@
+# One Render web service. The API serves the built React app and /api/v1.
+# A disk is required so the JSON file and uploads survive deploys.
+# Disks are only available on a paid web service. Keep the instance count at 1.
+services:
+  - type: web
+    name: news-india
+    runtime: node
+    plan: 0.5c-512mb
+    numInstances: 1
+    buildCommand: npm run build
+    startCommand: npm run start -w @news-india/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_PROVIDER
+        value: json
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: WEB_ORIGIN
+        fromService:
+          name: news-india
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: DEMO_DATA_FILE
+        value: /var/data/demo-data.json
+      - key: DEMO_UPLOAD_DIR
+        value: /var/data/uploads
+    disk:
+      name: news-india-data
+      mountPath: /var/data
+      sizeGB: 1

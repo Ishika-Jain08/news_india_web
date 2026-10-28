@@ -16,8 +16,8 @@ await repo.init()
 await mkdir(env.uploadDir, { recursive: true })
 
 const app = createApp(env, repo)
-app.listen(env.port, () => {
-  console.log(`News India API listening on http://localhost:${env.port}`)
+app.listen(env.port, '0.0.0.0', () => {
+  console.log(`News India listening on http://0.0.0.0:${env.port}`)
   console.log(`OpenAPI docs: http://localhost:${env.port}/api/docs`)
   console.log(`JSON data file: ${env.demoDataFile}`)
 })

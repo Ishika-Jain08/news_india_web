@@ -17,6 +17,7 @@ const envSchema = z.object({
   DATA_PROVIDER: z.preprocess(blankToUndefined, z.string().default('json')),
   DEMO_DATA_FILE: z.preprocess(blankToUndefined, z.string().min(1).default('data/demo-data.json')),
   DEMO_UPLOAD_DIR: z.preprocess(blankToUndefined, z.string().min(1).default('uploads')),
+  STATIC_DIR: z.preprocess(blankToUndefined, z.string().min(1).optional()),
   LOGIN_WINDOW_MS: z.preprocess(blankToUndefined, z.coerce.number().int().positive().default(15 * 60 * 1000)),
   LOGIN_MAX_ATTEMPTS: z.preprocess(blankToUndefined, z.coerce.number().int().positive().default(10)),
 })
@@ -30,6 +31,8 @@ export interface Env {
   demoDataFile: string
   uploadDir: string
   seedDataFile: string
+  /** Built frontend directory. Null keeps the API JSON-only, which is what tests use. */
+  staticDir: string | null
   loginWindowMs: number
   loginMaxAttempts: number
 }
@@ -43,8 +46,17 @@ export interface EnvOverrides {
   demoDataFile?: string
   uploadDir?: string
   seedDataFile?: string
+  staticDir?: string | null
   loginWindowMs?: number
   loginMaxAttempts?: number
+}
+
+function resolveStaticDir(nodeEnv: Env['nodeEnv'], override: string | null | undefined, configured: string | undefined) {
+  if (override === null) return null
+  if (override) return resolveFromApiRoot(override)
+  if (configured) return resolveFromApiRoot(configured)
+  if (nodeEnv === 'production') return path.resolve(apiRoot(), '..', 'web', 'dist')
+  return null
 }
 
 export function loadEnv(overrides: EnvOverrides = {}): Env {
@@ -71,6 +83,7 @@ export function loadEnv(overrides: EnvOverrides = {}): Env {
     seedDataFile: overrides.seedDataFile
       ? resolveFromApiRoot(overrides.seedDataFile)
       : path.join(apiRoot(), 'data', 'seed-data.json'),
+    staticDir: resolveStaticDir(nodeEnv, overrides.staticDir, parsed.STATIC_DIR),
     loginWindowMs: overrides.loginWindowMs ?? parsed.LOGIN_WINDOW_MS,
     loginMaxAttempts: overrides.loginMaxAttempts ?? parsed.LOGIN_MAX_ATTEMPTS,
   }

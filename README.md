@@ -171,6 +171,10 @@ PDFs use the bundled Noto Sans Devanagari font in `apps/api/assets/fonts`. The f
 
 The live desk starts with no video id. An admin or editor can save a YouTube URL. Until then the page shows an empty state and does not pretend a video is live.
 
+## Deploy to Render
+
+Use the single web service in `render.yaml`. The API process serves the built site and `/api/v1` on one host, and a paid Render disk at `/var/data` keeps the JSON file. Step-by-step settings are in [docs/render.md](docs/render.md).
+
 ## Limitations
 
 - One API process. The JSON file will corrupt or lose updates if two processes write it.

@@ -18,6 +18,13 @@ export function errorHandler(error: unknown, _req: Request, res: Response, _next
     })
     return
   }
+  if (typeof error === 'object' && error && 'type' in error && error.type === 'entity.parse.failed') {
+    res.status(400).json({
+      success: false,
+      error: { code: 'VALIDATION_ERROR', message: 'Request body must be valid JSON' },
+    })
+    return
+  }
   if (error instanceof ZodError) {
     res.status(400).json({
       success: false,

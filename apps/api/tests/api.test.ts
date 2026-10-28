@@ -1,9 +1,14 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import request from 'supertest'
 import { describe, expect, it } from 'vitest'
 import { trendingScore } from '../src/services/trending.js'
 import { parseYoutubeInput } from '../src/services/youtube.js'
 import { renderTextProbe } from '../src/services/pdf.service.js'
+import { createApp } from '../src/app.js'
+import { loadEnv } from '../src/config/env.js'
+import { createRepository } from '../src/repositories/index.js'
 import { accounts, login, makeApp } from './helpers.js'
 
 describe('health, listing, language, and search', () => {
@@ -282,6 +287,39 @@ describe('uploads, YouTube validation, PDF, and corrupt data', () => {
     expect(renderTextProbe('नमस्ते समाचार')).toBeGreaterThan(100)
     await ctx.close()
   }, 60000)
+
+  it('serves the frontend on the same origin and keeps API errors as JSON', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'news-india-web-'))
+    await writeFile(path.join(dir, 'index.html'), '<div id="root">News India</div>', 'utf8')
+    const dataDir = await mkdtemp(path.join(os.tmpdir(), 'news-india-data-'))
+    const env = loadEnv({
+      nodeEnv: 'test',
+      webOrigin: 'https://news-india.example',
+      staticDir: dir,
+      demoDataFile: path.join(dataDir, 'demo.json'),
+      uploadDir: path.join(dataDir, 'uploads'),
+      sessionSecret: 'test-session-secret-value',
+    })
+    const repo = createRepository(env)
+    await repo.init()
+    const app = createApp(env, repo)
+    const page = await request(app).get('/en/article/example')
+    expect(page.status).toBe(200)
+    expect(page.headers['content-type']).toContain('text/html')
+    expect(page.text).toContain('News India')
+    const missing = await request(app).get('/api/v1/does-not-exist')
+    expect(missing.status).toBe(404)
+    expect(missing.body.error.code).toBe('NOT_FOUND')
+    const badJson = await request(app).post('/api/v1/auth/login').set('Content-Type', 'application/json').send('{')
+    expect(badJson.status).toBe(400)
+    expect(badJson.body.error.code).toBe('VALIDATION_ERROR')
+    const blocked = await request(app).get('/api/v1/health').set('Origin', 'https://evil.example')
+    expect(blocked.headers['access-control-allow-origin']).toBeUndefined()
+    const allowed = await request(app).get('/api/v1/health').set('Origin', 'https://news-india.example')
+    expect(allowed.headers['access-control-allow-origin']).toBe('https://news-india.example')
+    await rm(dir, { recursive: true, force: true })
+    await rm(dataDir, { recursive: true, force: true })
+  })
 
   it('refuses a corrupted demo file instead of switching providers', async () => {
     const ctx = await makeApp()
